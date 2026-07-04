@@ -147,7 +147,6 @@ pnpm --version
 eas --version
 turbo --version
 vercel --version
-watchman --version
 tmux -V
 nvim --version
 ```

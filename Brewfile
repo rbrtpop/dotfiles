@@ -2,7 +2,6 @@
 # Runtime/toolchain CLIs live in mise unless they need Homebrew specifically.
 
 brew "git"
-brew "watchman"
 brew "curl"
 brew "mole"
 brew "openssl@3"

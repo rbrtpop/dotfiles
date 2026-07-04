@@ -57,7 +57,6 @@ pnpm --version
 eas --version
 turbo --version
 vercel --version
-watchman --version
 tmux -V
 nvim --version
 ```
@@ -66,7 +65,7 @@ Some apps still need their own sign-in after setup, such as Cursor, Codex, Expo/
 
 ## What This Setup Installs Or Changes
 
-- Homebrew packages and apps from `Brewfile`, including Git, Watchman, Cursor, Ghostty, Expo Orbit, Stats, superwhisper, a Nerd Font, Amphetamine, and Transporter.
+- Homebrew packages and apps from `Brewfile`, including Git, Cursor, Ghostty, Expo Orbit, Stats, superwhisper, a Nerd Font, Amphetamine, and Transporter.
 - Standalone `mise` at `~/.local/bin/mise`.
 - Standalone Codex at `~/.local/bin/codex`, with fresh Codex state under `~/.codex`.
 - Node 24, pnpm, Ruby, GitHub CLI, EAS CLI, Turbo, Vercel, tmux, Neovim, ripgrep, fd, fzf, jq, yq, lazygit, bat, eza, zoxide, and Socket Firewall through `mise`.
