@@ -213,6 +213,7 @@ if [[ "$dry_run" -eq 1 ]]; then
   install_mise_tools
   install_shell_framework
   log "dry-run: would run bin/check-mise-tools"
+  run_script "bin/auth-setup" --dry-run
   run_script "bin/setup-tmux" --dry-run
 else
   run_script "bin/ensure-mise-standalone"
@@ -221,6 +222,7 @@ else
   install_mise_tools
   install_shell_framework
   run_script "bin/check-mise-tools"
+  run_script "bin/auth-setup"
   run_script "bin/setup-tmux"
   print_shell_reload_hint
 fi

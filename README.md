@@ -14,7 +14,7 @@ Clone to this exact path:
 
 ```bash
 mkdir -p ~/development
-git clone --recurse-submodules git@github.com:rbrtpop/dotfiles.git ~/development/dotfiles
+git clone --recurse-submodules https://github.com/rbrtpop/dotfiles.git ~/development/dotfiles
 cd ~/development/dotfiles
 ./bin/setup
 ```
@@ -34,6 +34,7 @@ exec zsh
 - Standalone `mise` installed at `~/.local/bin/mise`.
 - Standalone Codex installed at `~/.local/bin/codex` with runtime under `~/.codex/packages/standalone`.
 - pnpm-first mise toolchain for Next.js + Expo: Node 24 LTS, pnpm, EAS CLI, Turbo, Vercel, GitHub CLI, tmux, Neovim, search tools, shell niceties, and Socket Firewall.
+- GitHub authentication setup: `gh auth login`, local Git identity, SSH key creation/upload, and `origin` remote migration from HTTPS to SSH.
 - Same dotfile symlink model as the source repo: files under `home/` link into `$HOME`, and `nvim` links to `~/.config/nvim`.
 - Same alias definitions as the source repo.
 - Oh My Zsh, Powerlevel10k, `zsh-autosuggestions`, `zsh-fzf-history-search`, TPM, and tmux plugins.

@@ -28,6 +28,12 @@ This repo's Roberta integration path is:
 ~/development/dotfiles
 ```
 
+The first clone should use HTTPS so setup can establish SSH later:
+
+```bash
+git clone --recurse-submodules https://github.com/rbrtpop/dotfiles.git ~/development/dotfiles
+```
+
 ## Owned Files
 
 Docs own:

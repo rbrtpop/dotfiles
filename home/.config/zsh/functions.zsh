@@ -385,6 +385,7 @@ dotfiles-update                  - pull dotfiles updates and submodules
 ./bin/preflight                  - check setup prerequisites, script syntax, and repo state
 ./bin/link-dotfiles              - symlink managed files from home/ into $HOME
 ./bin/check-mise-tools           - verify mise tools and shims
+./bin/auth-setup                 - authenticate GitHub, configure SSH, and switch origin to SSH
 ./bin/setup-tmux                 - install TPM and missing tmux plugins
 ./bin/ensure-mise-standalone     - install or verify standalone mise
 ./bin/ensure-codex-standalone    - install or verify standalone Codex

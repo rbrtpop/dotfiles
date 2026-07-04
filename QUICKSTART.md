@@ -4,7 +4,7 @@
 
 ```bash
 mkdir -p ~/development
-git clone --recurse-submodules git@github.com:rbrtpop/dotfiles.git ~/development/dotfiles
+git clone --recurse-submodules https://github.com/rbrtpop/dotfiles.git ~/development/dotfiles
 cd ~/development/dotfiles
 ./bin/setup
 ```
@@ -26,6 +26,9 @@ exec zsh
 
 ```bash
 ./bin/check-mise-tools
+gh auth status --hostname github.com
+ssh -T git@github.com
+git remote get-url origin
 codex doctor --json
 pnpm --version
 eas --version

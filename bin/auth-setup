@@ -1,0 +1,415 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dry_run=0
+ssh_url="git@github.com:rbrtpop/dotfiles.git"
+
+log() {
+  printf '==> %s\n' "$1"
+}
+
+warn() {
+  printf '!! %s\n' "$1" >&2
+}
+
+usage() {
+  printf 'Usage: ./bin/auth-setup [--dry-run]\n' >&2
+}
+
+prepend_mise_paths() {
+  export PATH="${HOME}/.local/bin:${HOME}/.local/share/mise/shims:${PATH}"
+}
+
+run_gh() {
+  if command -v gh >/dev/null 2>&1; then
+    gh "$@"
+    return $?
+  fi
+
+  if command -v mise >/dev/null 2>&1; then
+    (cd "$HOME" && mise exec -- gh "$@")
+    return $?
+  fi
+
+  return 127
+}
+
+gh_available() {
+  run_gh --version >/dev/null 2>&1
+}
+
+github_user_name() {
+  run_gh api user --jq '.name // .login // empty' 2>/dev/null || true
+}
+
+github_noreply_email() {
+  run_gh api user --jq '(.id | tostring) + "+" + .login + "@users.noreply.github.com"' 2>/dev/null || true
+}
+
+default_git_name() {
+  local name
+
+  name="$(git config --global --includes user.name 2>/dev/null || true)"
+  if [[ -n "$name" ]]; then
+    printf '%s\n' "$name"
+    return 0
+  fi
+
+  name="$(github_user_name)"
+  if [[ -n "$name" ]]; then
+    printf '%s\n' "$name"
+    return 0
+  fi
+
+  whoami
+}
+
+default_git_email() {
+  local email
+
+  email="$(github_noreply_email)"
+  if [[ -n "$email" ]]; then
+    printf '%s\n' "$email"
+    return 0
+  fi
+
+  git config --global --includes user.email 2>/dev/null || true
+}
+
+default_key_comment() {
+  local host
+
+  host="$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname)"
+  printf '%s@%s\n' "$(whoami)" "$host"
+}
+
+warn_if_non_noreply_git_email() {
+  local email noreply_email
+
+  email="$(git config --global --includes user.email 2>/dev/null || true)"
+  [[ -n "$email" ]] || return 0
+  [[ "$email" == *@users.noreply.github.com ]] && return 0
+
+  noreply_email="$(github_noreply_email)"
+  warn "Git commit email is not a GitHub noreply address; GitHub may reject pushes when private-email protection is enabled."
+  if [[ -n "$noreply_email" ]]; then
+    warn "Run: git config --file ~/.gitconfig.local user.email \"${noreply_email}\""
+  fi
+}
+
+ensure_github_auth() {
+  if ! gh_available; then
+    warn "gh is not available. Run ./bin/setup first so mise installs GitHub CLI."
+    return 0
+  fi
+
+  if run_gh auth status --hostname github.com >/dev/null 2>&1; then
+    log "GitHub CLI is authenticated"
+    if [[ "$dry_run" -eq 1 ]]; then
+      log "dry-run: would set gh git_protocol=ssh"
+      return 0
+    fi
+    run_gh config set git_protocol ssh --host github.com >/dev/null 2>&1 || warn "Could not set gh git_protocol=ssh"
+    return 0
+  fi
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would authenticate GitHub CLI with SSH git protocol"
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    warn "GitHub CLI authentication requires an interactive terminal; rerun ./bin/auth-setup"
+    return 0
+  fi
+
+  log "Authenticating GitHub CLI with SSH git protocol"
+  run_gh auth login --hostname github.com --git-protocol ssh --skip-ssh-key
+  run_gh config set git_protocol ssh --host github.com >/dev/null 2>&1 || warn "Could not set gh git_protocol=ssh"
+}
+
+ensure_git_identity() {
+  local local_config="${HOME}/.gitconfig.local"
+  local name email default_name default_email
+
+  if git -c user.useConfigOnly=true var GIT_AUTHOR_IDENT >/dev/null 2>&1; then
+    log "Git identity is configured"
+    warn_if_non_noreply_git_email
+    return 0
+  fi
+
+  default_name="$(default_git_name)"
+  default_email="$(default_git_email)"
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would configure Git identity in ${local_config}"
+    return 0
+  fi
+
+  if [[ ! -t 0 ]]; then
+    warn "Git identity is missing; create ~/.gitconfig.local or rerun ./bin/auth-setup interactively."
+    return 0
+  fi
+
+  log "Configuring Git identity in ${local_config}"
+  read -r -p "Git user.name [${default_name}]: " name
+  name="${name:-$default_name}"
+
+  while [[ -z "${email:-}" ]]; do
+    if [[ -n "$default_email" ]]; then
+      read -r -p "Git user.email [${default_email}]: " email
+      email="${email:-$default_email}"
+    else
+      read -r -p "Git user.email: " email
+    fi
+  done
+
+  git config --file "$local_config" user.name "$name"
+  git config --file "$local_config" user.email "$email"
+  chmod 600 "$local_config"
+  warn_if_non_noreply_git_email
+}
+
+ensure_ssh_key() {
+  local key_path="${HOME}/.ssh/id_ed25519"
+  local comment
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would ensure ${key_path} and ${key_path}.pub exist"
+    return 0
+  fi
+
+  mkdir -p "${HOME}/.ssh"
+  chmod 700 "${HOME}/.ssh"
+
+  if [[ -f "$key_path" && ! -f "${key_path}.pub" ]]; then
+    log "Rebuilding SSH public key: ${key_path}.pub"
+    ssh-keygen -y -f "$key_path" > "${key_path}.pub"
+  fi
+
+  if [[ -f "$key_path" && -f "${key_path}.pub" ]]; then
+    log "SSH key exists: ${key_path}"
+    return 0
+  fi
+
+  comment="$(default_git_email)"
+  if [[ -z "$comment" ]]; then
+    comment="$(default_key_comment)"
+  fi
+
+  log "Generating SSH key: ${key_path}"
+  ssh-keygen -t ed25519 -C "$comment" -f "$key_path" -N ""
+}
+
+add_ssh_key_to_agent() {
+  local key_path="${HOME}/.ssh/id_ed25519"
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would add ${key_path} to the SSH agent"
+    return 0
+  fi
+
+  if [[ ! -f "$key_path" ]]; then
+    warn "No SSH private key found to add to the agent"
+    return 0
+  fi
+
+  log "Adding SSH key to macOS keychain-backed agent"
+  ssh-add --apple-use-keychain "$key_path" 2>/dev/null || ssh-add "$key_path" || true
+}
+
+ensure_github_known_host() {
+  local known_hosts="${HOME}/.ssh/known_hosts"
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would ensure github.com is present in SSH known_hosts"
+    return 0
+  fi
+
+  mkdir -p "${HOME}/.ssh"
+  chmod 700 "${HOME}/.ssh"
+  touch "$known_hosts"
+  chmod 600 "$known_hosts"
+
+  if ssh-keygen -F github.com -f "$known_hosts" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "Adding github.com to SSH known_hosts"
+  ssh-keyscan github.com >> "$known_hosts" 2>/dev/null || warn "Could not add github.com to SSH known_hosts"
+}
+
+github_ssh_authenticated() {
+  local output
+
+  set +e
+  output="$(ssh -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1)"
+  set -e
+
+  [[ "$output" == *"successfully authenticated"* ]]
+}
+
+github_public_key_scope_error() {
+  local output="$1"
+
+  [[ "$output" == *"admin:public_key"* || "$output" == *"public_key"* || "$output" == *"HTTP 404"* ]]
+}
+
+ensure_github_public_key_scope() {
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would refresh GitHub CLI admin:public_key scope"
+    return 1
+  fi
+
+  if [[ ! -t 0 ]]; then
+    warn "GitHub CLI needs the admin:public_key scope to upload SSH keys."
+    warn "Rerun ./bin/auth-setup interactively, or run: gh auth refresh -h github.com -s admin:public_key"
+    return 1
+  fi
+
+  log "Refreshing GitHub CLI public-key scope"
+  run_gh auth refresh --hostname github.com --scopes admin:public_key
+}
+
+upload_ssh_key_to_github() {
+  local key_path="${HOME}/.ssh/id_ed25519.pub"
+  local key_contents keys title output status
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would upload ${key_path} to GitHub if missing"
+    return 0
+  fi
+
+  if [[ ! -f "$key_path" ]]; then
+    warn "No SSH public key found to upload"
+    return 0
+  fi
+
+  if ! gh_available || ! run_gh auth status --hostname github.com >/dev/null 2>&1; then
+    warn "GitHub CLI is not authenticated; cannot upload SSH key"
+    return 0
+  fi
+
+  key_contents="$(awk '{ print $1 " " $2 }' "$key_path")"
+  set +e
+  keys="$(run_gh api user/keys --jq '.[].key' 2>&1)"
+  status=$?
+  set -e
+
+  if [[ $status -ne 0 ]]; then
+    if github_public_key_scope_error "$keys"; then
+      ensure_github_public_key_scope || return 0
+      set +e
+      keys="$(run_gh api user/keys --jq '.[].key' 2>&1)"
+      status=$?
+      set -e
+    fi
+
+    if [[ $status -ne 0 ]]; then
+      warn "Could not list GitHub SSH keys: ${keys}"
+      return 0
+    fi
+  fi
+
+  if printf '%s\n' "$keys" | grep -Fxq "$key_contents"; then
+    log "SSH key already exists on GitHub"
+    return 0
+  fi
+
+  title="$(scutil --get ComputerName 2>/dev/null || hostname)"
+  output="$(run_gh ssh-key add "$key_path" --title "$title" 2>&1)" || {
+    if github_public_key_scope_error "$output"; then
+      ensure_github_public_key_scope || return 0
+      output="$(run_gh ssh-key add "$key_path" --title "$title" 2>&1)" || {
+        warn "Could not upload SSH key to GitHub: ${output}"
+        return 0
+      }
+    else
+      warn "Could not upload SSH key to GitHub: ${output}"
+      return 0
+    fi
+  }
+
+  [[ -z "$output" ]] || printf '%s\n' "$output"
+  log "Uploaded SSH key to GitHub"
+}
+
+verify_github_ssh() {
+  local output
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would verify GitHub SSH authentication"
+    return 0
+  fi
+
+  set +e
+  output="$(ssh -o BatchMode=yes -o ConnectTimeout=5 -T git@github.com 2>&1)"
+  set -e
+
+  if [[ "$output" == *"successfully authenticated"* ]]; then
+    log "GitHub SSH works"
+  else
+    warn "GitHub SSH is not verified yet: ${output}"
+  fi
+}
+
+configure_dotfiles_origin_remote() {
+  local current_url
+
+  if ! git -C "$repo_root" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    return 0
+  fi
+
+  current_url="$(git -C "$repo_root" remote get-url origin 2>/dev/null || true)"
+
+  case "$current_url" in
+    "$ssh_url")
+      log "dotfiles origin already uses SSH"
+      ;;
+    https://github.com/rbrtpop/dotfiles | https://github.com/rbrtpop/dotfiles.git)
+      if [[ "$dry_run" -eq 1 ]]; then
+        log "dry-run: would switch dotfiles origin to ${ssh_url}"
+      elif github_ssh_authenticated; then
+        log "Switching dotfiles origin to SSH"
+        git -C "$repo_root" remote set-url origin "$ssh_url"
+      else
+        warn "dotfiles origin still uses HTTPS; rerun ./bin/auth-setup after GitHub SSH works"
+      fi
+      ;;
+    "")
+      warn "No origin remote is configured for this repo"
+      ;;
+    *)
+      warn "Leaving unexpected origin remote unchanged: ${current_url}"
+      ;;
+  esac
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+prepend_mise_paths
+ensure_github_auth
+ensure_git_identity
+ensure_ssh_key
+add_ssh_key_to_agent
+ensure_github_known_host
+upload_ssh_key_to_github
+verify_github_ssh
+configure_dotfiles_origin_remote

@@ -24,11 +24,29 @@ for Next.js + Expo work:
 - Homebrew for GUI apps and tools not owned by mise.
 - `mise` for runtimes and global CLIs.
 - Standalone installers for `mise` and Codex.
+- GitHub CLI authentication, Git identity setup, SSH key upload, and `origin`
+  remote migration from HTTPS to SSH.
 - Symlinked dotfiles under `home/`.
 - `nvim` as a git submodule linked to `~/.config/nvim`.
 
 Full Xcode, simulators, Android Studio, Raycast, Mackup, macOS defaults, and
 app-state restore are explicitly out of scope for this pass.
+
+## Clone With HTTPS, Then Switch To SSH
+
+Roberta can clone this repo before GitHub SSH exists:
+
+```bash
+git clone --recurse-submodules https://github.com/rbrtpop/dotfiles.git ~/development/dotfiles
+```
+
+After `gh` is installed, `bin/auth-setup` authenticates her GitHub account,
+creates or reuses `~/.ssh/id_ed25519`, uploads the public key to GitHub, checks
+`ssh -T git@github.com`, and switches `origin` to:
+
+```bash
+git@github.com:rbrtpop/dotfiles.git
+```
 
 ## pnpm Is the Default Package Manager
 
