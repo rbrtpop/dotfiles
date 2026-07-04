@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+mise_bin_dir="${HOME}/.local/bin"
+shim_dir="${HOME}/.local/share/mise/shims"
+smoke_commands=(
+  node
+  npm
+  pnpm
+  eas
+  turbo
+  vercel
+  gh
+  tmux
+  nvim
+  rg
+  fd
+  fzf
+  jq
+  yq
+  lazygit
+  bat
+  eza
+  zoxide
+  sfw
+)
+
+log() {
+  printf '==> %s\n' "$1"
+}
+
+warn() {
+  printf '!! %s\n' "$1" >&2
+}
+
+export PATH="${shim_dir}:${mise_bin_dir}:${PATH}"
+
+if ! command -v mise >/dev/null 2>&1; then
+  warn "mise is not available; run ./bin/ensure-mise-standalone first."
+  exit 1
+fi
+
+missing="$(mise ls --current --missing --no-header --cd "$HOME" 2>/dev/null || true)"
+if [[ -n "$missing" ]]; then
+  warn "Some configured mise tools are still missing:"
+  printf '%s\n' "$missing" >&2
+  warn "Rerun: mise install --cd ${HOME}"
+  exit 1
+fi
+
+log "Refreshing mise shims"
+mise reshim --cd "$HOME"
+
+missing_commands=()
+non_shim_commands=()
+for command_name in "${smoke_commands[@]}"; do
+  resolved="$(command -v "$command_name" 2>/dev/null || true)"
+  if [[ -z "$resolved" ]]; then
+    missing_commands+=("$command_name")
+  elif [[ "$resolved" != "${shim_dir}/"* ]]; then
+    non_shim_commands+=("${command_name}:${resolved}")
+  fi
+done
+
+if [[ ${#missing_commands[@]} -gt 0 ]]; then
+  warn "Mise tools are installed, but these commands are not on PATH: ${missing_commands[*]}"
+  warn "Expected mise shims on PATH: ${shim_dir}"
+  exit 1
+fi
+
+if [[ ${#non_shim_commands[@]} -gt 0 ]]; then
+  warn "These mise-owned commands resolved outside the shim directory:"
+  printf '%s\n' "${non_shim_commands[@]}" >&2
+  warn "Expected mise shims on PATH before Homebrew: ${shim_dir}"
+  exit 1
+fi
+
+log "Mise tools are installed and smoke commands are on PATH"

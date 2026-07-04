@@ -1,0 +1,22 @@
+.DS_Store
+*.bak
+*.orig
+*.tmp
+
+# Local environment and secrets.
+.env
+.env.*
+!.env.example
+home/.config/local/*
+!home/.config/local/
+!home/.config/local/*.example
+
+# Backup and restore artifacts must stay out of git.
+.sync-backups/
+.dotfiles-backups/
+*.rayconfig
+codex-state-*.tar.gz.age
+mackup/
+
+# Local worktree noise from nested repos or future submodules.
+.submodule-seed/

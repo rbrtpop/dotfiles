@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+log() {
+  printf '==> %s\n' "$1"
+}
+
+log "Updating dotfiles repo"
+git -C "$repo_root" pull --ff-only
+
+log "Updating git submodules"
+git -C "$repo_root" submodule update --init --recursive
+
+cat <<'EOF'
+
+Dotfiles updated.
+Run ./bin/setup on Roberta's Mac to apply package, symlink, shell, tmux, and toolchain changes.
+EOF

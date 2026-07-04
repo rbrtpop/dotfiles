@@ -1,0 +1,25 @@
+[tools]
+node = "24.18.0"
+pnpm = "latest"
+"npm:eas-cli" = "latest"
+turbo = "latest"
+vercel = "latest"
+gh = "latest"
+tmux = "latest"
+neovim = "latest"
+ripgrep = "latest"
+fd = "latest"
+fzf = "latest"
+jq = "latest"
+yq = "latest"
+lazygit = "latest"
+bat = "latest"
+eza = "latest"
+zoxide = "latest"
+"npm:sfw" = "latest"
+
+[settings]
+experimental = true
+
+[settings.npm]
+package_manager = "pnpm"

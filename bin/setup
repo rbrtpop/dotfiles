@@ -1,0 +1,228 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dry_run=0
+
+log() {
+  printf '==> %s\n' "$1"
+}
+
+warn() {
+  printf '!! %s\n' "$1" >&2
+}
+
+usage() {
+  printf 'Usage: ./bin/setup [--dry-run]\n' >&2
+}
+
+ensure_not_root() {
+  if [[ "${EUID}" -eq 0 ]]; then
+    warn "Do not run ./bin/setup with sudo or as root."
+    warn "Run: ./bin/setup"
+    warn "The scripts will ask for sudo only when a specific privileged step needs it."
+    exit 1
+  fi
+}
+
+ensure_xcode_command_line_tools() {
+  if xcode-select -p >/dev/null 2>&1; then
+    log "Xcode Command Line Tools are installed"
+    return 0
+  fi
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would open the Xcode Command Line Tools installer"
+    return 0
+  fi
+
+  warn "Xcode Command Line Tools are required before setup can continue."
+  log "Opening the Xcode Command Line Tools installer"
+  xcode-select --install >/dev/null 2>&1 || {
+    warn "The installer may already be open. If not, run: xcode-select --install"
+  }
+
+  cat <<'EOF'
+
+Finish the Xcode Command Line Tools installer popup, then rerun:
+
+  ./bin/setup
+EOF
+  exit 0
+}
+
+load_homebrew_shellenv() {
+  if [[ -n "${HOMEBREW_PREFIX:-}" && -x "${HOMEBREW_PREFIX}/bin/brew" ]]; then
+    eval "$("${HOMEBREW_PREFIX}/bin/brew" shellenv)"
+    return 0
+  fi
+
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  elif command -v brew >/dev/null 2>&1; then
+    eval "$(brew shellenv)"
+  fi
+}
+
+ensure_homebrew() {
+  load_homebrew_shellenv
+
+  if command -v brew >/dev/null 2>&1; then
+    log "Homebrew is already installed"
+    return 0
+  fi
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would install Homebrew"
+    return 0
+  fi
+
+  log "Installing Homebrew"
+  NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  load_homebrew_shellenv
+}
+
+install_brew_bundle() {
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would run brew bundle install --no-upgrade --file ${repo_root}/Brewfile"
+    return 0
+  fi
+
+  log "Installing Homebrew bundle"
+  brew bundle install --no-upgrade --file "${repo_root}/Brewfile"
+}
+
+run_script() {
+  local script="$1"
+  shift
+
+  log "Running ${script}"
+  "${repo_root}/${script}" "$@"
+}
+
+initialize_submodules() {
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would initialize git submodules"
+    return 0
+  fi
+
+  log "Initializing git submodules"
+  git -C "$repo_root" submodule sync --recursive
+  git -C "$repo_root" submodule update --init --recursive
+}
+
+install_mise_tools() {
+  export PATH="${HOME}/.local/bin:${HOME}/.local/share/mise/shims:${PATH}"
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would run mise install --cd ${HOME}"
+    return 0
+  fi
+
+  log "Installing mise tools"
+  mise install --cd "$HOME"
+}
+
+install_shell_framework() {
+  local omz_dir="${HOME}/.oh-my-zsh"
+  local custom_dir="${ZSH_CUSTOM:-${omz_dir}/custom}"
+  local p10k_dir="${custom_dir}/themes/powerlevel10k"
+  local autosuggestions_dir="${custom_dir}/plugins/zsh-autosuggestions"
+  local fzf_history_dir="${custom_dir}/plugins/zsh-fzf-history-search"
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    log "dry-run: would install Oh My Zsh, Powerlevel10k, zsh-autosuggestions, and zsh-fzf-history-search"
+    return 0
+  fi
+
+  if [[ ! -d "$omz_dir" ]]; then
+    log "Installing Oh My Zsh"
+    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir"
+  else
+    log "Oh My Zsh is already installed"
+  fi
+
+  if [[ ! -d "$p10k_dir" ]]; then
+    log "Installing Powerlevel10k"
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$p10k_dir"
+  else
+    log "Powerlevel10k is already installed"
+  fi
+
+  if [[ ! -d "$autosuggestions_dir" ]]; then
+    log "Installing zsh-autosuggestions"
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions.git "$autosuggestions_dir"
+  else
+    log "zsh-autosuggestions is already installed"
+  fi
+
+  if [[ ! -d "$fzf_history_dir" ]]; then
+    log "Installing zsh-fzf-history-search"
+    git clone --depth=1 https://github.com/joshskidmore/zsh-fzf-history-search.git "$fzf_history_dir"
+  else
+    log "zsh-fzf-history-search is already installed"
+  fi
+}
+
+print_shell_reload_hint() {
+  cat <<'EOF'
+
+Shell environment updated.
+Open a new terminal, or reload this one with:
+  source "$HOME/.zshrc"
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      dry_run=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+ensure_not_root
+ensure_xcode_command_line_tools
+initialize_submodules
+
+if [[ "$dry_run" -eq 1 ]]; then
+  run_script "bin/preflight"
+else
+  run_script "bin/preflight"
+fi
+
+ensure_homebrew
+install_brew_bundle
+
+if [[ "$dry_run" -eq 1 ]]; then
+  run_script "bin/ensure-mise-standalone" --dry-run
+  run_script "bin/ensure-codex-standalone" --dry-run
+  run_script "bin/link-dotfiles" --dry-run
+  install_mise_tools
+  install_shell_framework
+  log "dry-run: would run bin/check-mise-tools"
+  run_script "bin/setup-tmux" --dry-run
+else
+  run_script "bin/ensure-mise-standalone"
+  run_script "bin/ensure-codex-standalone"
+  run_script "bin/link-dotfiles"
+  install_mise_tools
+  install_shell_framework
+  run_script "bin/check-mise-tools"
+  run_script "bin/setup-tmux"
+  print_shell_reload_hint
+fi
+
+log "Minimal setup complete"
