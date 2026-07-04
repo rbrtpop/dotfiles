@@ -4,7 +4,6 @@
 brew "git"
 brew "watchman"
 brew "curl"
-brew "git"
 brew "mole"
 brew "openssl@3"
 brew "webp"
