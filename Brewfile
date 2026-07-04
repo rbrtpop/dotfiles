@@ -7,6 +7,7 @@ brew "curl"
 brew "mole"
 brew "openssl@3"
 brew "webp"
+brew "btop"
 
 # Mac App Store
 mas "Amphetamine", id: 937984704

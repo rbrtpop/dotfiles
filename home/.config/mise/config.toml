@@ -18,7 +18,6 @@ lazygit = "latest"
 bat = "latest"
 eza = "latest"
 zoxide = "latest"
-btop = "latest"
 "npm:sfw" = "latest"
 
 [settings]
