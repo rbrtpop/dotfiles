@@ -1,10 +1,9 @@
 # Decisions
 
-## Roberta's Mac Is the Integration Target
+## This Mac Is the Integration Target
 
 This repo is developed locally at `/Users/gabimoncha/development/dotfiles-robi`,
-but setup must not be run on Gabimoncha's current Mac. The real integration
-target is Roberta's Mac.
+but setup must not be run on Gabimoncha's current Mac. The real integration target is this Mac.
 
 All setup instructions use the exact clone path:
 
@@ -18,7 +17,7 @@ aligned with the source dotfiles behavior.
 ## Minimal Over Full-Machine Restore
 
 The source repo at `/Users/gabimoncha/development/dotfiles` is a full-machine
-development environment. Roberta's repo keeps only the reviewed subset needed
+development environment. This repo keeps only the reviewed subset needed
 for Next.js + Expo work:
 
 - Homebrew for GUI apps and tools not owned by mise.
@@ -45,7 +44,7 @@ Use `DOTFILES_SKIP_SUDO_TOUCH_ID=1 ./bin/setup` to skip this step.
 
 ## Clone With HTTPS, Then Switch To SSH
 
-Roberta can clone this repo before GitHub SSH exists:
+The user can clone this repo before GitHub SSH exists:
 
 ```bash
 git clone --recurse-submodules https://github.com/rbrtpop/dotfiles.git ~/development/dotfiles
@@ -61,7 +60,7 @@ git@github.com:rbrtpop/dotfiles.git
 
 ## pnpm Is the Default Package Manager
 
-The source repo defaults npm package execution to Bun. Roberta's setup defaults
+The source repo defaults npm package execution to Bun. This setup defaults
 to pnpm:
 
 ```toml
@@ -74,7 +73,7 @@ expect `sfw` when pnpm is available.
 
 ## Fresh Identity
 
-Tracked `.gitconfig` does not set `user.name` or `user.email`. Roberta's Git
+Tracked `.gitconfig` does not set `user.name` or `user.email`. The user's Git
 identity belongs in `~/.gitconfig.local`, which is included by the tracked
 config. Codex is installed fresh; Gabimoncha's Codex memories, auth state,
 histories, plugin state, and archives are not restored.

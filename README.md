@@ -1,16 +1,12 @@
-# Roberta dotfiles
+# Dotfiles
 
-Minimal macOS dotfiles for Roberta's Next.js + Expo work. This repo is derived
-from `/Users/gabimoncha/development/dotfiles`, but it deliberately keeps only
-the portable setup pieces needed for this machine.
+This repo sets up the Mac for coding projects, especially projects that have a Next.js web app and an Expo mobile app.
 
-Do not run `./bin/setup`, `./bin/link-dotfiles`, Homebrew writers, restore
-scripts, or app-state scripts from this repo on Gabimoncha's current Mac. The
-real integration target is Roberta's Mac.
+It is a small, portable version of gabimoncha/dotfiles. The goal is not to copy his whole computer. The goal is to install the shared coding tools and terminal setup.
 
-## Roberta Setup
+## First Setup
 
-Clone to this exact path:
+Run this on Mac:
 
 ```bash
 mkdir -p ~/development
@@ -19,37 +15,97 @@ cd ~/development/dotfiles
 ./bin/setup
 ```
 
-If the Xcode Command Line Tools installer opens, finish that installer and run
-`./bin/setup` again.
+Do not run setup with `sudo`. The script will ask for the Mac password only
+when a specific step needs administrator access.
 
-After setup finishes, open a new terminal or run:
+If the Xcode Command Line Tools installer opens, finish that installer, then
+run setup again:
+
+```bash
+./bin/setup
+```
+
+During setup, expect a few normal prompts:
+
+- The Mac password for Homebrew or Touch ID sudo setup.
+- A GitHub login in the terminal or browser.
+- Git name and email setup. If unsure, use the GitHub noreply email suggested
+by the script.
+- Existing terminal config files may be backed up under  
+`~/.dotfiles-backups/<date-and-time>/` before this repo links its versions.
+
+## After Setup
+
+Open a new Ghostty or Cursor terminal. You can also reload the current terminal
+with:
 
 ```bash
 exec zsh
 ```
 
-## Included
+Then run these checks from the dotfiles folder:
 
-- Minimal Homebrew bundle: Git, Watchman, Ghostty, Cursor, and Geist Mono Nerd Font.
-- Standalone `mise` installed at `~/.local/bin/mise`.
-- Standalone Codex installed at `~/.local/bin/codex` with runtime under `~/.codex/packages/standalone`.
-- pnpm-first mise toolchain for Next.js + Expo: Node 24 LTS, pnpm, EAS CLI, Turbo, Vercel, GitHub CLI, tmux, Neovim, search tools, shell niceties, and Socket Firewall.
-- GitHub authentication setup: `gh auth login`, local Git identity, SSH key creation/upload, and `origin` remote migration from HTTPS to SSH.
-- Touch ID for terminal `sudo` prompts through `/etc/pam.d/sudo_local` when macOS supports it.
-- Same dotfile symlink model as the source repo: files under `home/` link into `$HOME`, and `nvim` links to `~/.config/nvim`.
-- Same alias definitions as the source repo.
-- Oh My Zsh, Powerlevel10k, `zsh-autosuggestions`, `zsh-fzf-history-search`, TPM, and tmux plugins.
+```bash
+cd ~/development/dotfiles
+./bin/check-mise-tools
+./bin/configure-sudo-touch-id --check
+gh auth status --hostname github.com
+ssh -T git@github.com
+git remote get-url origin
+codex doctor --json
+pnpm --version
+eas --version
+turbo --version
+vercel --version
+watchman --version
+tmux -V
+nvim --version
+```
 
-## Excluded
+Some apps still need their own sign-in after setup, such as Cursor, Codex, Expo/EAS, Vercel, or Apple account apps. Project-specific `.env` files and secrets are not managed by this repo.
 
-- Full Xcode, Xcodes, iOS platform downloads, simulators, and Android Studio.
-- Raycast, Mackup, Synology/iCloud restore flows, macOS defaults automation, Finder sidebar changes, and app-state restore.
-- Gabimoncha's Codex config, memories, auth, histories, or local machine state.
-- Personal apps and workstation-specific configs such as Karabiner, AeroSpace, Zed, and superwhisper.
+## What This Setup Installs Or Changes
+
+- Homebrew packages and apps from `Brewfile`, including Git, Watchman, Cursor, Ghostty, Expo Orbit, Stats, superwhisper, a Nerd Font, Amphetamine, and Transporter.
+- Standalone `mise` at `~/.local/bin/mise`.
+- Standalone Codex at `~/.local/bin/codex`, with fresh Codex state under `~/.codex`.
+- Node 24, pnpm, Ruby, GitHub CLI, EAS CLI, Turbo, Vercel, tmux, Neovim, ripgrep, fd, fzf, jq, yq, lazygit, bat, eza, zoxide, and Socket Firewall through `mise`.
+- pnpm as the default JavaScript package manager.
+- Zsh, Oh My Zsh, Powerlevel10k, zsh plugins, aliases, shell helpers, tmux config, and tmux plugins.
+- Dotfile symlinks from this repo's `home/` folder into Roberta's real home folder.
+- The `nvim` folder linked to `~/.config/nvim`.
+- GitHub authentication, SSH key creation/upload, and changing this repo's `origin` remote from HTTPS to SSH after SSH works.
+- Touch ID for terminal `sudo` prompts when the Mac supports Apple's `/etc/pam.d/sudo_local` hook.
+
+## Updating Later
+
+On Mac:
+
+```bash
+cd ~/development/dotfiles
+./bin/dotfiles-update
+./bin/setup
+```
+
+`dotfiles-update` pulls the latest repo changes. `setup` applies package,
+symlink, shell, tmux, GitHub, and toolchain changes.
+
+## For Coding Agents
+
+Read `AGENTS.md` before changing this repo.
+
+It explains changes in plain English:
+
+- What changed.
+- Why it matters.
+- What the user needs to run or sign into.
+- What was intentionally left out.
+
+Do not commit changes unless the user explicitly asks for a commit. Keep changes small and update the docs when setup behavior changes.
 
 ## Local Development Safety
 
-In `/Users/gabimoncha/development/dotfiles-robi`, use only static checks:
+Use static checks only:
 
 ```bash
 git status --short
@@ -59,5 +115,4 @@ zsh -n home/.zshrc home/.zprofile home/.zshenv home/.config/zsh/*.zsh
 git submodule status
 ```
 
-Do not validate by running setup, link, restore, Homebrew, Xcode, or commands
-that write into live `$HOME` on Gabimoncha's machine.
+Do not validate by running setup, link, restore, Homebrew, Xcode, or commands that write into live `$HOME`

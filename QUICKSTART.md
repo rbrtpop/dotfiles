@@ -1,6 +1,6 @@
 # Quickstart
 
-## Roberta's Mac
+## This Mac
 
 ```bash
 mkdir -p ~/development
@@ -22,7 +22,7 @@ Reload the shell after setup:
 exec zsh
 ```
 
-## Verification On Roberta's Mac
+## Verification On This Mac
 
 ```bash
 ./bin/check-mise-tools
