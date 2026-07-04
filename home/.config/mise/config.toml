@@ -1,6 +1,8 @@
 [tools]
 node = "24.18.0"
 pnpm = "latest"
+ruby = "3.4.9"
+age = "latest"
 "npm:eas-cli" = "latest"
 turbo = "latest"
 vercel = "latest"

@@ -2,28 +2,26 @@
 #
 # What this gives you:
 # - `npx <pkg>` and `px <pkg>` run through the package manager selected by mise.
-# - `bx <pkg>` remains an explicit Bun escape hatch.
 # - Project-local `mise.toml` settings override your global mise config.
 #
 # To adopt this in another zsh setup:
 # 1. Install mise and activate it before sourcing this file:
 #      eval "$(mise activate zsh)"
 # 2. Set your preferred global default:
-#      mise settings set npm.package_manager bun
+#      mise settings set npm.package_manager pnpm
 #    or add this to `~/.config/mise/config.toml`:
 #      [settings.npm]
-#      package_manager = "bun"
+#      package_manager = "pnpm"
 # 3. Optionally override per project in `mise.toml`:
 #      [settings.npm]
 #      package_manager = "pnpm"
 # 4. Source this file from `.zshrc` after mise activation:
 #      [ -r "$HOME/.config/zsh/mise-npx.zsh" ] && source "$HOME/.config/zsh/mise-npx.zsh"
 #
-# Supported mise values are `bun`, `pnpm`, `aube`, and `auto`. This wrapper
-# delegates flags to the selected runner, prefers project-local binaries for
-# pnpm projects, routes pnpm through Socket Firewall Free, deliberately refuses
-# `npm` and `yarn`, and treats `auto` as aubx -> bunx -> pnpm without falling
-# back to npm.
+# Supported mise values are `pnpm` and `auto`. This wrapper prefers
+# project-local binaries, routes pnpm through Socket Firewall Free, deliberately
+# refuses npm/yarn/Bun runners, and treats `auto` as pnpm-only because this Mac
+# does not install Bun.
 
 _mise_npm_package_manager() {
   local manager
@@ -39,11 +37,11 @@ _mise_npm_package_manager() {
   fi
 
   case "$manager" in
-    bun|pnpm|aube|auto)
+    pnpm|auto)
       print -r -- "$manager"
       ;;
-    npm|yarn)
-      print -u2 "npx: mise selected '$manager', but this shell wrapper only allows bun, pnpm, aube, or non-npm auto"
+    bun|bunx|aube|npm|yarn)
+      print -u2 "npx: mise selected '$manager', but this setup only installs pnpm"
       return 1
       ;;
     "")
@@ -58,14 +56,10 @@ _mise_npm_package_manager() {
 }
 
 _mise_npm_auto_package_manager() {
-  if command -v aubx >/dev/null 2>&1; then
-    print -r -- "aube"
-  elif command -v bunx >/dev/null 2>&1; then
-    print -r -- "bun"
-  elif command -v pnpm >/dev/null 2>&1; then
+  if command -v pnpm >/dev/null 2>&1; then
     print -r -- "pnpm"
   else
-    print -u2 "npx: mise npm.package_manager is auto, but no aubx, bunx, or pnpm runner is on PATH"
+    print -u2 "npx: mise npm.package_manager is auto, but pnpm is not on PATH"
     return 1
   fi
 }
@@ -83,12 +77,6 @@ _mise_npm_effective_package_manager() {
 
 _mise_npm_require_runner() {
   case "$1" in
-    bun)
-      command -v bunx >/dev/null 2>&1 || {
-        print -u2 "npx: mise selected bun, but bunx is not on PATH"
-        return 1
-      }
-      ;;
     pnpm)
       command -v pnpm >/dev/null 2>&1 || {
         print -u2 "npx: mise selected pnpm, but pnpm is not on PATH"
@@ -96,12 +84,6 @@ _mise_npm_require_runner() {
       }
       command -v sfw >/dev/null 2>&1 || {
         print -u2 "npx: mise selected pnpm, but sfw is not on PATH"
-        return 1
-      }
-      ;;
-    aube)
-      command -v aubx >/dev/null 2>&1 || {
-        print -u2 "npx: mise selected aube, but aubx is not on PATH"
         return 1
       }
       ;;
@@ -142,14 +124,8 @@ npx() {
   _mise_npm_require_runner "$manager" || return
 
   case "$manager" in
-    bun)
-      command bunx "$@"
-      ;;
     pnpm)
       _mise_npm_run_pnpm "$@"
-      ;;
-    aube)
-      command aubx "$@"
       ;;
   esac
 }
@@ -157,5 +133,3 @@ npx() {
 px() {
   npx "$@"
 }
-
-alias bx='bunx'

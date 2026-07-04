@@ -428,9 +428,8 @@ pip <args>                       - run pip through Socket Firewall Free
 uv <args>                        - run uv through Socket Firewall Free
 cargo <args>                     - run Cargo through Socket Firewall Free
 command <tool> <args>            - bypass shell aliases for one package-manager call
-npx <pkg>                        - run a package CLI through mise-selected bun, pnpm, or aube
+npx <pkg>                        - run a package CLI through mise-selected pnpm
 px <pkg>                         - short alias for the mise-aware npx wrapper
-bx <pkg>                         - run a package CLI explicitly with bunx
 help                             - alias for use-my-mac
 use-my-mac                       - open this searchable command menu
 EOF
