@@ -24,6 +24,8 @@ for Next.js + Expo work:
 - Homebrew for GUI apps and tools not owned by mise.
 - `mise` for runtimes and global CLIs.
 - Standalone installers for `mise` and Codex.
+- Touch ID for terminal `sudo` prompts through `/etc/pam.d/sudo_local` when
+  macOS includes that local PAM hook.
 - GitHub CLI authentication, Git identity setup, SSH key upload, and `origin`
   remote migration from HTTPS to SSH.
 - Symlinked dotfiles under `home/`.
@@ -31,6 +33,15 @@ for Next.js + Expo work:
 
 Full Xcode, simulators, Android Studio, Raycast, Mackup, macOS defaults, and
 app-state restore are explicitly out of scope for this pass.
+
+## Touch ID For Sudo Uses `sudo_local`
+
+`bin/configure-sudo-touch-id` enables `pam_tid.so` in `/etc/pam.d/sudo_local`.
+It refuses to edit Apple's managed `/etc/pam.d/sudo` file directly. If a macOS
+install does not include the `auth include sudo_local` hook, setup logs a
+warning and continues.
+
+Use `DOTFILES_SKIP_SUDO_TOUCH_ID=1 ./bin/setup` to skip this step.
 
 ## Clone With HTTPS, Then Switch To SSH
 

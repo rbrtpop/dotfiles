@@ -114,6 +114,23 @@ initialize_submodules() {
   git -C "$repo_root" submodule update --init --recursive
 }
 
+configure_sudo_touch_id() {
+  if [[ "${DOTFILES_SKIP_SUDO_TOUCH_ID:-}" == "1" ]]; then
+    warn "Skipping Touch ID sudo setup because DOTFILES_SKIP_SUDO_TOUCH_ID=1"
+    return 0
+  fi
+
+  if [[ "$dry_run" -eq 1 ]]; then
+    run_script "bin/configure-sudo-touch-id" --enable --dry-run || true
+    return 0
+  fi
+
+  if ! run_script "bin/configure-sudo-touch-id" --enable; then
+    warn "Touch ID sudo setup failed or is unsupported on this macOS install."
+    warn "Continuing setup; rerun ./bin/configure-sudo-touch-id --enable later if needed."
+  fi
+}
+
 install_mise_tools() {
   export PATH="${HOME}/.local/bin:${HOME}/.local/share/mise/shims:${PATH}"
 
@@ -203,6 +220,7 @@ else
   run_script "bin/preflight"
 fi
 
+configure_sudo_touch_id
 ensure_homebrew
 install_brew_bundle
 

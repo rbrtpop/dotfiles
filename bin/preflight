@@ -98,6 +98,7 @@ check_script_syntax() {
     "bin/link-dotfiles"
     "bin/check-mise-tools"
     "bin/auth-setup"
+    "bin/configure-sudo-touch-id"
     "bin/setup-tmux"
     "bin/ensure-mise-standalone"
     "bin/ensure-codex-standalone"

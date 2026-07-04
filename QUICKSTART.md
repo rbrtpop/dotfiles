@@ -26,6 +26,7 @@ exec zsh
 
 ```bash
 ./bin/check-mise-tools
+./bin/configure-sudo-touch-id --check
 gh auth status --hostname github.com
 ssh -T git@github.com
 git remote get-url origin

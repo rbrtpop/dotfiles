@@ -35,6 +35,7 @@ exec zsh
 - Standalone Codex installed at `~/.local/bin/codex` with runtime under `~/.codex/packages/standalone`.
 - pnpm-first mise toolchain for Next.js + Expo: Node 24 LTS, pnpm, EAS CLI, Turbo, Vercel, GitHub CLI, tmux, Neovim, search tools, shell niceties, and Socket Firewall.
 - GitHub authentication setup: `gh auth login`, local Git identity, SSH key creation/upload, and `origin` remote migration from HTTPS to SSH.
+- Touch ID for terminal `sudo` prompts through `/etc/pam.d/sudo_local` when macOS supports it.
 - Same dotfile symlink model as the source repo: files under `home/` link into `$HOME`, and `nvim` links to `~/.config/nvim`.
 - Same alias definitions as the source repo.
 - Oh My Zsh, Powerlevel10k, `zsh-autosuggestions`, `zsh-fzf-history-search`, TPM, and tmux plugins.
