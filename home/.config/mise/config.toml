@@ -1,7 +1,14 @@
+# bin/ensure-mise-standalone installs this release. An older mise stops here
+# with an upgrade message.
+min_version = "2026.10.17"
+
 [tools]
-node = "24.18.0"
+# Security releases (October 2026). npm 11.21.1 carries the dependency
+# patches; it comes before node, so it wins over the npm that Node bundles.
+npm = "11.21.1"
+node = "24.22.1"
 pnpm = "latest"
-ruby = "3.4.9"
+ruby = "3.4.11"
 age = "latest"
 "npm:eas-cli" = "latest"
 turbo = "latest"
@@ -22,6 +29,17 @@ zoxide = "latest"
 
 [settings]
 experimental = true
+# A "latest" tool waits four days after a release, so a compromised release
+# has time to be found and pulled. Exact pins above are not delayed.
+minimum_release_age = "4d"
 
 [settings.npm]
 package_manager = "pnpm"
+
+# The precompiled Ruby 3.4.11 bundles OpenSSL 3.5.5, which has known
+# vulnerabilities. Building from source links Homebrew's openssl@3.
+[settings.ruby]
+compile = true
+# configure otherwise runs the first `ruby` on PATH, the mise shim, which waits
+# for the Ruby that is being built, and the install hangs. Docs add build time.
+ruby_build_opts = "--without-baseruby --disable-install-doc"

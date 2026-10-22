@@ -3,6 +3,8 @@
 
 brew "git"
 brew "curl"
+# mise builds Ruby from source; its YAML extension (psych) needs libyaml.
+brew "libyaml"
 brew "mole"
 brew "openssl@3"
 brew "webp"

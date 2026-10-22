@@ -66,9 +66,9 @@ Some apps still need their own sign-in after setup, such as Cursor, Codex, Expo/
 ## What This Setup Installs Or Changes
 
 - Homebrew packages and apps from `Brewfile`, including Git, Cursor, Ghostty, Expo Orbit, Stats, superwhisper, a Nerd Font, Amphetamine, and Transporter.
-- Standalone `mise` at `~/.local/bin/mise`.
+- Standalone `mise` at `~/.local/bin/mise`, a fixed version that setup checks before it installs it.
 - Standalone Codex at `~/.local/bin/codex`, with fresh Codex state under `~/.codex`.
-- Node 24, pnpm, Ruby, GitHub CLI, EAS CLI, Turbo, Vercel, tmux, Neovim, ripgrep, fd, fzf, jq, yq, lazygit, bat, eza, zoxide, and Socket Firewall through `mise`.
+- Node 24, npm, pnpm, Ruby, GitHub CLI, EAS CLI, Turbo, Vercel, tmux, Neovim, ripgrep, fd, fzf, jq, yq, lazygit, bat, eza, zoxide, and Socket Firewall through `mise`.
 - pnpm as the default JavaScript package manager.
 - Zsh, Oh My Zsh, Powerlevel10k, zsh plugins, aliases, shell helpers, tmux config, and tmux plugins.
 - Dotfile symlinks from this repo's `home/` folder into Roberta's real home folder.
@@ -88,6 +88,9 @@ cd ~/development/dotfiles
 
 `dotfiles-update` pulls the latest repo changes. `setup` applies package,
 symlink, shell, tmux, GitHub, and toolchain changes.
+
+The first setup after a Ruby update builds Ruby on the Mac. That step can take
+5 to 10 minutes. Setup shows progress while it works.
 
 ## For Coding Agents
 
