@@ -4,6 +4,11 @@ set -euo pipefail
 
 dry_run=0
 mise_bin="${MISE_INSTALL_PATH:-${HOME}/.local/bin/mise}"
+# The mise release that setup installs. Change the version and the installer
+# digest together: the digest is the sha256 of install.sh from that GitHub
+# release. Setup refuses an installer whose digest does not match.
+pinned_mise_version=2026.10.17
+pinned_installer_sha256=314162b17b5fe78e31d464416ab91ede17e9149aea4322f5f3539f1ebe46242f
 mise_bin_dir="$(dirname "$mise_bin")"
 
 log() {
@@ -33,8 +38,29 @@ load_homebrew_shellenv() {
   fi
 }
 
+# Prints the installed version, such as 2026.10.17. An older mise can refuse
+# the current config, so the config is not loaded.
+installed_mise_version() {
+  local output
+  [[ -x "$mise_bin" ]] || return 1
+  output="$(cd / && MISE_GLOBAL_CONFIG_FILE=/dev/null MISE_SELF_UPDATE_AUTO=0 "$mise_bin" --version 2>/dev/null)" || return 1
+  output="${output%% *}"
+  [[ "$output" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
+  printf '%s\n' "$output"
+}
+
+# Succeeds when the standalone mise is the pinned release or newer.
 standalone_mise_ok() {
-  [[ -x "$mise_bin" ]] && "$mise_bin" --version >/dev/null 2>&1
+  local version
+  version="$(installed_mise_version)" || return 1
+  awk -v have="$version" -v want="$pinned_mise_version" 'BEGIN {
+    split(have, h, "."); split(want, w, ".")
+    for (i = 1; i <= 3; i++) {
+      if (h[i] + 0 > w[i] + 0) exit 0
+      if (h[i] + 0 < w[i] + 0) exit 1
+    }
+    exit 0
+  }'
 }
 
 brew_mise_installed() {
@@ -48,14 +74,32 @@ brew_mise_installed() {
 }
 
 install_standalone_mise() {
+  local work_dir installer digest status=0
   if [[ "$dry_run" -eq 1 ]]; then
-    log "dry-run: would install mise standalone with https://mise.run"
+    log "dry-run: would install mise ${pinned_mise_version} from its GitHub release after checking the installer digest"
     return 0
   fi
 
-  log "Installing mise standalone"
+  log "Installing mise ${pinned_mise_version} standalone"
   mkdir -p "$mise_bin_dir"
-  MISE_INSTALL_PATH="$mise_bin" MISE_INSTALL_HELP=0 sh -c 'curl -fsSL https://mise.run | sh'
+  work_dir="$(mktemp -d)"
+  installer="${work_dir}/install.sh"
+  if ! curl -fsSL --connect-timeout 15 --max-time 120 --retry 2 -o "$installer" \
+    "https://github.com/jdx/mise/releases/download/v${pinned_mise_version}/install.sh"; then
+    warn "Could not download the mise ${pinned_mise_version} installer"
+    rm -rf "$work_dir"
+    return 1
+  fi
+  digest="$(/usr/bin/shasum -a 256 "$installer")"
+  digest="${digest%% *}"
+  if [[ "$digest" != "$pinned_installer_sha256" ]]; then
+    warn "The mise installer checksum does not match; refusing to run it"
+    rm -rf "$work_dir"
+    return 1
+  fi
+  MISE_VERSION="v${pinned_mise_version}" MISE_INSTALL_PATH="$mise_bin" MISE_INSTALL_HELP=0 sh "$installer" || status=$?
+  rm -rf "$work_dir"
+  return "$status"
 }
 
 verify_standalone_mise() {
@@ -121,7 +165,7 @@ done
 export PATH="${mise_bin_dir}:${PATH}"
 
 if standalone_mise_ok; then
-  log "mise standalone install is already present"
+  log "mise standalone ${pinned_mise_version} or newer is already present"
 else
   install_standalone_mise
 fi

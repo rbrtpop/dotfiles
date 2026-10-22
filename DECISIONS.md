@@ -58,6 +58,26 @@ creates or reuses `~/.ssh/id_ed25519`, uploads the public key to GitHub, checks
 git@github.com:rbrtpop/dotfiles.git
 ```
 
+## Security Versions
+
+Tools marked `latest` in `home/.config/mise/config.toml` pick up security fixes
+on the next setup. A few tools have exact versions instead, and these must be
+raised by hand when a security release comes out:
+
+- `mise`: `bin/ensure-mise-standalone` downloads one fixed release from GitHub
+  and runs its installer only when the installer's checksum matches. Change
+  `pinned_mise_version` and `pinned_installer_sha256` together.
+- Node stays on the 24 LTS line, at its newest security release.
+- npm is pinned to the release with the latest dependency patches. It comes
+  before Node, so it replaces the npm bundled with Node.
+- Ruby builds from source. The prebuilt Ruby bundles an OpenSSL with known
+  vulnerabilities; the source build links Homebrew's `openssl@3` and needs
+  Homebrew's `libyaml`.
+
+`minimum_release_age = "4d"` makes each `latest` tool wait four days after a
+release, so a compromised release has time to be found and pulled. Exact
+versions are not delayed.
+
 ## pnpm Is the Default Package Manager
 
 The source repo defaults npm package execution to Bun. This setup defaults
