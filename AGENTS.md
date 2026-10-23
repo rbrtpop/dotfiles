@@ -183,3 +183,9 @@ When reporting work, lead with the practical effect:
 Avoid jargon when possible. If a term matters, define it briefly. For example:
 say "a symlink is a shortcut from your home folder to this repo" instead of
 assuming she knows what a symlink is.
+
+## Pull Requests
+
+Write every pull request body from `.github/pull_request_template.md`, also
+with `gh pr create --body`, which skips the template. Delete sections that do
+not apply.
