@@ -13,14 +13,30 @@ Delete any section that does not apply.
 ## What changes
 
 <!--
-One picture. Pick the smallest view that makes the point:
-- A before-and-after table of what she sees: an app, a terminal command,
-  a shortcut, or a question that setup asks.
-- A Mermaid flowchart when the change adds, removes, or moves a setup step.
-  Boxes are steps, arrows mean "then", and diamonds are questions that
-  setup asks her.
-Then add up to three bullets: what she will notice, what stays the same,
-and what you left out on purpose.
+One picture, with a Before and an After. Draw two diagrams, Before and
+After, or draw one diagram and mark the changed parts with
+`classDef changed`. For a new thing, write "Before: none."
+
+Pick the diagram with one question: does the next step depend on an input
+from outside, which can come late, come wrong, or not come?
+- Yes: a Mermaid state diagram (stateDiagram-v2). An outside input is
+  something that the Mac waits for: Roberta (her Mac password, Touch ID,
+  a GitHub sign-in), a download, a timer, or a cancel. A state is a place
+  where the thing waits, for example "Waiting for your Mac password" or
+  "Downloading the Xcode tools". An arrow is the event that moves it on.
+  Draw the arrows for the bad events too (timeout, error, cancel, retry),
+  because the change can go wrong there.
+- No: a Mermaid flowchart. The procedure runs from start to end with the
+  data that it has, for example setup steps that run alone, such as "Link
+  the settings files" or "Install the apps in the list". Boxes are steps,
+  arrows mean "then", and diamonds are decisions on that data.
+- No diagram fits (a new app version, a renamed command, a shortcut): a
+  table of old and new values, a diff, or pseudocode.
+Write every label in plain words that she knows: "Type your Mac password",
+not "sudo". Name the bad events the same way, for example "Wrong
+password", "No internet", or "You closed the window".
+Add up to three bullets for what the picture misses, including what you
+left out on purpose. Say what she will notice and what stays the same.
 Name each new prompt (Mac password, GitHub sign-in, Touch ID) and each long
 wait, for example "the first setup builds Ruby and takes 5 to 10 minutes".
 -->
