@@ -78,6 +78,11 @@ raised by hand when a security release comes out:
 release, so a compromised release has time to be found and pulled. Exact
 versions are not delayed.
 
+The mise 2026.10.18 and Ruby 3.4.12 security updates use exact pins to avoid
+that delay. The [mise release](https://github.com/jdx/mise/releases/tag/v2026.10.18)
+updates vulnerable dependencies. The [Ruby release](https://www.ruby-lang.org/en/news/2026/10/23/ruby-3-4-12-released/)
+fixes regular expression compilation bugs.
+
 ## pnpm Is the Default Package Manager
 
 The source repo defaults npm package execution to Bun. This setup defaults
