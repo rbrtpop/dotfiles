@@ -7,8 +7,8 @@ mise_bin="${MISE_INSTALL_PATH:-${HOME}/.local/bin/mise}"
 # The mise release that setup installs. Change the version and the installer
 # digest together: the digest is the sha256 of install.sh from that GitHub
 # release. Setup refuses an installer whose digest does not match.
-pinned_mise_version=2026.10.22
-pinned_installer_sha256=0c1d8462b47aa4c5f81f4c6c153ea6d66c1bad03b38c08d205f90f1fa2ac7b24
+pinned_mise_version=2026.11.0
+pinned_installer_sha256=fc9949b47999c44b02e6e25883da707e5b5b42c902fd0e42030088d1847a1233
 mise_bin_dir="$(dirname "$mise_bin")"
 
 log() {
@@ -38,7 +38,7 @@ load_homebrew_shellenv() {
   fi
 }
 
-# Prints the installed version, such as 2026.10.22. An older mise can refuse
+# Prints the installed version, such as 2026.11.0. An older mise can refuse
 # the current config, so the config is not loaded.
 installed_mise_version() {
   local output
